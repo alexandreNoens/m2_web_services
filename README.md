@@ -77,6 +77,18 @@ make -C preuves/etape_1 get-profile
 Les captures et les sorties textuelles correspondantes sont disponibles dans
 [`preuves/etape_1`](preuves/etape_1/README.md).
 
+Les trois scenarios d'erreur de l'etape 2 peuvent etre verifies avec :
+
+```bash
+make -C preuves/etape_2 check
+make -C preuves/etape_2 missing-order
+make -C preuves/etape_2 empty-cart
+make -C preuves/etape_2 invalid-json
+```
+
+Les emplacements des captures correspondantes sont prepares dans
+[`preuves/etape_2`](preuves/etape_2/README.md).
+
 ## Arret
 
 Arreter le serveur Uvicorn avec `Ctrl+C`, puis PostgreSQL avec :

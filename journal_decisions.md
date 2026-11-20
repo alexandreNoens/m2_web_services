@@ -99,3 +99,16 @@ Alternatives ecartees:
 - Les paiements stockent la cle d'idempotence et une empreinte de la requete; meme cle et meme requete renvoient le meme paiement.
 - Toutes les erreurs exposees par l'API, y compris les erreurs de validation FastAPI, utilisent `application/problem+json`.
 - Les informations sensibles de l'utilisateur existent en base pour verifier qu'elles ne sont pas exposees par la route de profil.
+
+## Etape 2
+
+### Format et codes d'erreur
+
+- Toutes les erreurs utilisent `application/problem+json` et les cinq champs `type`, `title`, `status`, `detail` et `instance`, conformement au format Problem Details (RFC 9457).
+- Les erreurs metier passent par une exception `ApiProblem`; les erreurs de validation et les erreurs HTTP de FastAPI sont converties par des gestionnaires globaux afin de garantir la meme forme partout.
+- Une ressource absente renvoie 404, une entree invalide (dont un panier vide ou du JSON illisible) renvoie 422, et un conflit avec l'etat courant renvoie 409.
+- Le champ `detail` indique au client la valeur ou l'etat a corriger, tandis que `instance` identifie la route concernee.
+
+Alternatives ecartees:
+- Le corps FastAPI par defaut `{ "detail": ... }`, car il n'a pas la meme forme que les erreurs metier.
+- Un code 500 pour une erreur de syntaxe JSON, car la requete du client est invalide et le serveur n'est pas en faute.
