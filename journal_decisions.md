@@ -112,3 +112,37 @@ Alternatives ecartees:
 Alternatives ecartees:
 - Le corps FastAPI par defaut `{ "detail": ... }`, car il n'a pas la meme forme que les erreurs metier.
 - Un code 500 pour une erreur de syntaxe JSON, car la requete du client est invalide et le serveur n'est pas en faute.
+
+## Etape 3
+
+### Regles de pagination
+
+- La liste renvoie 20 commandes par defaut et accepte au maximum 100 commandes.
+- Une demande superieure a 100 est refusee avec une erreur `422` plutot que plafonnee silencieusement. Le client sait ainsi que son parametre est invalide.
+- La pagination utilise un curseur opaque plutot qu'un numero de page. Son cout ne depend pas du nombre de pages deja parcourues et les insertions recentes ne decaleraient pas les pages suivantes.
+- L'ordre est stable : `created_at DESC, id DESC`. L'identifiant departage les commandes qui ont exactement la meme date.
+- La requete lit `limit + 1` lignes. La ligne supplementaire n'est pas renvoyee : elle sert uniquement a savoir si `nextCursor` doit etre produit.
+
+Requete SQL envoyee a PostgreSQL pour une page apres un curseur :
+
+```sql
+SELECT orders.id, orders.restaurant_id, orders.user_id, orders.status,
+       orders.total_amount_cents, orders.currency, orders.created_at,
+       orders.updated_at
+FROM orders
+WHERE (orders.created_at, orders.id) < (:cursor_created_at, :cursor_id)
+ORDER BY orders.created_at DESC, orders.id DESC
+LIMIT :limit_plus_one;
+```
+
+Un index composite dans le meme ordre permet a PostgreSQL de se positionner directement apres le curseur :
+
+```sql
+CREATE INDEX ix_orders_created_at_id_desc
+ON orders (created_at DESC, id DESC);
+```
+
+Alternatives ecartees:
+- `OFFSET`, car la base doit parcourir les lignes ignorees sur une page profonde et parce que des insertions peuvent decaler les resultats.
+- Lire toutes les commandes puis decouper la liste en Python, car la quantite de donnees lue augmenterait avec la taille de la table.
+- Plafonner silencieusement une demande superieure a 100, car cela masquerait une erreur du client.

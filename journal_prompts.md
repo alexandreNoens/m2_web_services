@@ -89,3 +89,25 @@
 - Les erreurs metier sans URI specifique renvoyaient `"type": null`. La valeur standard RFC `"about:blank"` est maintenant utilisee afin que le champ reste explicite et jamais nul.
 - Le controle automatique a ete renforce pour echouer si `type` vaut `null`.
 - Le serveur de demonstration avait ete lance sans l'option `--reload`; les dernieres corrections ont donc ete validees sur une nouvelle instance avant de demander un redemarrage pour les captures.
+
+## Etape 3 - Pagination bornee et preuves SQL
+
+**Ce qu'on a demande a l'IA :**
+> Planifier puis implementer l'etape 3, optimiser la liste des
+> commandes pour plusieurs millions de lignes et produire des preuves
+> rejouables de la limite et de la page suivante.
+
+**Ce qu'elle a bien fait :**
+
+- Elle a conserve les choix deja presents et proportionnes au projet : 20 commandes par defaut, 100 maximum et pagination par curseur.
+- Elle a remplace le filtre compose avec `OR` par une comparaison du couple `(created_at, id)` correspondant exactement a l'ordre de tri.
+- Elle a ajoute un index composite pour eviter de parcourir les pages precedentes lors d'une pagination profonde.
+- Elle a conserve `LIMIT limit + 1` afin de detecter la page suivante sans charger toute la table.
+- Elle a aligne le contrat OpenAPI, le journal de decisions et les exemples de curseur.
+- Elle a ajoute des controles automatiques pour la page par defaut, la page suivante, le maximum et la demande de 100 000 elements.
+
+**Ce qu'on a du corriger, et pourquoi :**
+
+- Le modele possedait seulement un index sur `created_at`, alors que le tri utilise aussi `id`; PostgreSQL devait encore departager ou filtrer certaines lignes.
+- Les exemples de curseur documentes ne contenaient pas l'identifiant requis par l'implementation. Ils ont ete remplaces par un curseur complet.
+- `create_all` ne cree pas un nouvel index lorsque la table existe deja. La creation idempotente de l'index est donc aussi executee au demarrage et avant le seed.

@@ -21,12 +21,14 @@ paths:
     get:
       tags: [Orders]
       summary: Lister les commandes
-      description: Retourne les commandes les plus recentes, avec pagination simple.
+      description: |
+        Retourne les commandes les plus recentes avec une pagination par curseur.
+        Une limite superieure a 100 est refusee avec une reponse 422.
       parameters:
         - in: query
           name: limit
           required: false
-          description: Nombre max de resultats (1 a 100)
+          description: Nombre maximal de resultats (1 a 100, 20 par defaut)
           schema:
             type: integer
             minimum: 1
@@ -35,7 +37,7 @@ paths:
         - in: query
           name: cursor
           required: false
-          description: Curseur opaque pour la page suivante
+          description: Curseur opaque retourne dans nextCursor pour demander la page suivante
           schema:
             type: string
       responses:
@@ -266,7 +268,7 @@ components:
             totalAmountCents: 2490
             currency: EUR
             createdAt: "2026-11-20T14:30:00Z"
-        nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTExLTIwVDE0OjMwOjAwWiJ9
+        nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTExLTIwVDE0OjMwOjAwKzAwOjAwIiwiaWQiOiI1YWZkZDg5MC1jNGM5LTQ1MTctOWVhOS03ZGRmNGRiNmUzZmQifQ
 
     OrderSummary:
       type: object

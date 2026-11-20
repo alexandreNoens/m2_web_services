@@ -89,6 +89,19 @@ make -C preuves/etape_2 invalid-json
 Les emplacements des captures correspondantes sont prepares dans
 [`preuves/etape_2`](preuves/etape_2/README.md).
 
+La pagination bornee et la lecture d'une page suivante de l'etape 3 se verifient avec :
+
+```bash
+make -C preuves/etape_3 check
+make -C preuves/etape_3 default-page
+make -C preuves/etape_3 next-page
+make -C preuves/etape_3 oversized-page
+make -C preuves/etape_3 explain
+```
+
+La requete SQL, son plan d'execution et la procedure de capture sont documentes
+dans [`preuves/etape_3`](preuves/etape_3/README.md).
+
 ## Arret
 
 Arreter le serveur Uvicorn avec `Ctrl+C`, puis PostgreSQL avec :
