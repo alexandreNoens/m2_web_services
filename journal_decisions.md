@@ -146,3 +146,27 @@ Alternatives ecartees:
 - `OFFSET`, car la base doit parcourir les lignes ignorees sur une page profonde et parce que des insertions peuvent decaler les resultats.
 - Lire toutes les commandes puis decouper la liste en Python, car la quantite de donnees lue augmenterait avec la taille de la table.
 - Plafonner silencieusement une demande superieure a 100, car cela masquerait une erreur du client.
+
+## Etape 4
+
+### Regles d'idempotence des paiements
+
+- Le client fabrique une cle unique pour chaque intention de paiement et l'envoie dans le header obligatoire `Idempotency-Key`.
+- La cle est conservee avec le paiement dans PostgreSQL sans expiration pour toute la duree de l'exercice.
+- La premiere requete cree le paiement et renvoie `201`. Les rejeux avec la meme cle et la meme requete renvoient le meme paiement et le meme statut `201`.
+- Une cle differente represente une nouvelle intention et cree donc un nouveau paiement, meme pour une commande deja payee.
+- Une requete sans cle est refusee en `422 application/problem+json`; une cle deja associee a une autre requete est refusee en `409`.
+
+La table `payments` impose une contrainte d'unicite sur `idempotency_key`. Cette
+contrainte garantit un seul enregistrement meme si deux requetes utilisant la
+meme cle arrivent simultanement. Apres un conflit d'insertion, l'API recharge et
+renvoie le paiement cree par la premiere transaction.
+
+Une empreinte SHA-256 de `order_id`, `method` et `card_token` est stockee avec la
+cle. Elle permet de distinguer un rejeu legitime d'une reutilisation accidentelle
+de la cle pour une autre requete sans conserver de donnee de carte brute.
+
+Alternatives ecartees:
+- Une cle generee par le serveur, car elle ne protegerait pas le premier appel contre la perte de sa reponse et le rejeu par le client.
+- Renvoyer une erreur lors d'un rejeu identique, car le client devrait alors deviner si le paiement a reellement ete effectue.
+- Un cache en memoire, car son contenu serait perdu au redemarrage et ne serait pas partage entre plusieurs instances de l'API.

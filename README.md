@@ -102,6 +102,20 @@ make -C preuves/etape_3 explain
 La requete SQL, son plan d'execution et la procedure de capture sont documentes
 dans [`preuves/etape_3`](preuves/etape_3/README.md).
 
+L'idempotence des paiements de l'etape 4 se verifie avec :
+
+```bash
+make -C preuves/etape_4 check
+make -C preuves/etape_4 replay-payment
+make -C preuves/etape_4 different-key
+make -C preuves/etape_4 missing-key
+```
+
+Ces commandes comparent trois rejeux, controlent directement le contenu de la
+table `payments`, testent une cle differente et verifient le refus d'une requete
+sans cle. La procedure de capture est documentee dans
+[`preuves/etape_4`](preuves/etape_4/README.md).
+
 ## Arret
 
 Arreter le serveur Uvicorn avec `Ctrl+C`, puis PostgreSQL avec :
