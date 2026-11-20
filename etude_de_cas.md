@@ -19,11 +19,11 @@ GET   /getStudentNotes?student=4&delete=true
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-Pas de verbe pour les ressources, il faut un nom au pluriel, l'action c'est le verbe HTTP.
+Pas de verbe pour les ressources, il faut un nom au pluriel, l'action est le verbe HTTP.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
-Problème de communication entre le back et le front. Mauvais endpoint, perte de donnée.
+Problème de communication entre le back et le front. Mauvais endpoint, perte de données.
 
 - Quel principe du cours s'applique ?
 
@@ -41,7 +41,7 @@ DELETE   /students/4
 
 - La dernière ligne cache un danger particulier. Lequel ?
 
-C'est un GET alors que c'est un delete
+C'est un GET alors que c'est un DELETE
 
 
 ## Cas 2
@@ -93,7 +93,7 @@ Content-Type: application/json
 
 - Que voulait dire E42 ? Qui est censé le savoir ?
 
-Une erreur, le backend avec normalement un message d'erreur. Mais sans l'envoie de ce message dans le backend, impossible pour le front de deviner.
+Une erreur, le backend avec normalement un message d'erreur. Mais sans l'envoi de ce message dans le backend, impossible pour le front de deviner.
 
 ## Cas 3
 La page d'accueil met 9 secondes
@@ -113,11 +113,11 @@ app.get('/v1/products', async (req, res) => {
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-La BDD renvoie TOUT les produits, il faudrait paginer.
+La BDD renvoie tous les produits, il faudrait paginer.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
-Plus il y a de produit plus la requête va être longue, si le site deviens lent les utilisateurs ne vont pas rester et donc ne pas acheter.
+Plus il y a de produits, plus la requête va être longue ; si le site devient lent, les utilisateurs ne vont pas rester et donc ne pas acheter.
 
 - Quel principe du cours s'applique ?
 
@@ -139,7 +139,7 @@ app.get('/v1/products?limit=20', async (req, res) => {
 
 - Le front demande 500 000 produits d'un coup. Que fait votre API ?
 
-l'API ne renvoie que 20 produits, si l'utilisateur veut voir le reste, il doit cliquer sur la page 2.
+L'API ne renvoie que 20 produits, si l'utilisateur veut voir le reste, il doit cliquer sur la page 2.
 
 ## Cas 4
 Trois dons de 20 €
@@ -163,11 +163,11 @@ app.post('/v1/donations', async (req, res) => {
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-l'API ne vérifie pas l'id d'une transaction, elle peut donc se répeter plusieurs fois.
+L'API ne vérifie pas l'id d'une transaction, elle peut donc se répéter plusieurs fois.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
-L'utilisateur peut être débiter plusieurs fois, il faut donc les rembourser. Probleme de SAV.
+L'utilisateur peut être débité plusieurs fois, il faut donc les rembourser. Problème de SAV.
 
 - Quel principe du cours s'applique ?
 
@@ -175,17 +175,17 @@ L'idempotence, faire l'action 1 fois ou 10 fois donne exactement le même résul
 
 - Décrivez la solution étape par étape : que fait l'appli, que fait le serveur au premier envoi, que fait-il au deuxième ?
 
-Le front envoie la requête de payement avec une clé,
-l'API ne connais pas cet clé, 
+Le front envoie la requête de paiement avec une clé,
+l'API ne connaît pas cette clé,
 le client est débité
 
-le front envoie une deuxieme requête de payement avec la même clé,
-l'API connais déjà cette clé, elle ne fait rien. 
+le front envoie une deuxième requête de paiement avec la même clé,
+l'API connaît déjà cette clé, elle ne fait rien.
 le client n'est pas débité à nouveau
 
 - Regardez l'ordre des deux opérations dans le code. Que se passe-t-il si le débit échoue ?
 
-La donnation est d'abord enregistrée avant le débit, il faut faire l'inverse.
+La donation est d'abord enregistrée avant le débit, il faut faire l'inverse.
 
 ## Cas 5 
 La fiche du conducteur
@@ -215,7 +215,7 @@ HTTP/1.1 200 OK
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-L'API renvoie trop d'information, on a pas besoin de tous ça.
+L'API renvoie trop d'informations, on n'a pas besoin de tout cela.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
@@ -244,7 +244,7 @@ Ne sort jamais de l'API :
 
 - « Ce n'est pas grave, le front ne les affiche pas. » Que répondez-vous ?
 
-Ce n'est pas parce que ce n'est pas visible dans le HTML que c'est invisible, F12, le body des requêtes ect ...
+Ce n'est pas parce que ce n'est pas visible dans le HTML que c'est invisible, F12, le body des requêtes, etc.
 
 ## Cas 6
 La facture de mars
@@ -264,11 +264,11 @@ app.get('/v1/forecast', async (req, res) => {
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-C'est une API publique, sans limite d'accès. N'importe qui peux faire autant de demande qu'il souhaite et donc nous faire payer à chaque fois.
+C'est une API publique, sans limite d'accès. N'importe qui peut faire autant de demandes qu'il souhaite et donc nous faire payer à chaque fois.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
-Surcharge du service, facture qui explose, problème de latence voir d'indisponibilitée.
+Surcharge du service, facture qui explose, problème de latence voire d'indisponibilité.
 
 - Quel principe du cours s'applique ?
 
@@ -277,15 +277,15 @@ Le rate limiting, un quota de requêtes par client. Au-delà, l'API refuse.
 - Que mettez-vous en place ? Précisez : qui est compté, quelle limite, et ce que l'API répond quand elle est dépassée.
 
 Un quota, X requêtes par X minutes pour un utilisateur 
-Quand ce quota est dépassé renvoyé le code HTTP 429 Too Many Requests     
+Quand ce quota est dépassé, renvoyez le code HTTP 429 Too Many Requests     
 
 - Vous limitez par adresse IP. Une école de 800 étudiants sort sur Internet avec une seule adresse. Que se passe-t-il ?
 
-Chaque étuditans ont la même adresse IP, le site crois que c'est une seule personnes qui appel 800 fois, alors que c'est un utilisateur différent à chaque fois.
+Chaque étudiant a la même adresse IP, le site croit que c'est une seule personne qui appelle 800 fois, alors que c'est un utilisateur différent à chaque fois.
 
 - La météo de Lyon change-t-elle toutes les secondes ? Qu'est-ce que ça vous suggère en plus ?
 
-Pas besoin d'avoir la météo chaques secondes, une fois par heure suffit.
+Pas besoin d'avoir la météo chaque seconde, une fois par heure suffit.
 
 
 ## Cas 7
@@ -312,11 +312,11 @@ L'appli de la banque est installée sur 200 000 téléphones. Voici les notes de
 
     - Ajout du champ `currency` dans la réponse de GET /v1/accounts/{id}
 
-    Non cassant, il suffira d'ajouter se champ dans le front.
+    Non cassant, il suffira d'ajouter ce champ dans le front.
 
     - Le champ `balance` s'appelle maintenant `availableBalance`
 
-    Cassant, la ressource n'est plus affiché côté front car le nom à changé.
+    Cassant, la ressource n'est plus affichée côté front, car le nom a changé.
 
     - Suppression du champ `iban` (peu utilisé)
 
@@ -332,7 +332,7 @@ L'appli de la banque est installée sur 200 000 téléphones. Voici les notes de
 
 - Quel dégât concret pour la banque ?
 
-SAV saturée, perte de confiance, client.
+SAV saturée, perte de confiance, perte de clients.
 
 - Quel principe du cours s'applique ?
 
@@ -348,11 +348,11 @@ Version 2 :
 - Le champ `balance` s'appelle maintenant `availableBalance`
 - Nouveau paramètre obligatoire `reason` sur POST /v1/transfers
 
-La version 1 reste un backup pour les versions de l'app qui ne sont pas mis à jours par les utilisateurs.
+La version 1 reste un backup pour les versions de l'app qui ne sont pas mises à jour par les utilisateurs.
 
 - Comment obtenir le même résultat métier pour la ligne 2 sans rien casser ?
 
-Modifier le contrat API, laissé l'ancien nom et ajouter le nouveau sous v2
+Modifier le contrat API, laisser l'ancien nom et ajouter le nouveau sous v2
 
 ## Cas 8 
 La conversation
@@ -376,7 +376,7 @@ Tom (back)     17:05   ah. et le champ s'appelle amount_cents depuis lundi, j'av
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-Le front et le back communique mal, les données ne sont pas cohérentes.
+Le front et le back communiquent mal, les données ne sont pas cohérentes.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
@@ -396,10 +396,10 @@ Rédiger un contrat API, pour chaque route il décrit :
 
 - Relevez tous les malentendus de la conversation. Il y en a au moins quatre.
 
-L'unité pour le prix n'a pas été défini
+L'unité pour le prix n'a pas été définie
 Le format de la date n'a pas été défini
 Le nom du champ date a été renommé
-Sarah aurait du demander un contrat API
+Sarah aurait dû demander un contrat API
 
 ## Cas 9 
 Le test qui dit toujours oui
@@ -422,7 +422,7 @@ test('le panier applique la remise de 10 %', async () => {
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
-Le test ne test que le code HTTP 200, ce n'est pas suffisant.
+Le test ne teste que le code HTTP 200, ce n'est pas suffisant.
 
 - Quel dégât concret : prix, sécurité ou scalabilité ? Donnez un exemple chiffré ou une situation.
 
@@ -439,7 +439,7 @@ Les tests d'API, des programmes qui appellent l'API et vérifient la réponse to
 test('le panier applique la remise de 10 %', async () => {
   const res = await api.post('/v1/carts/7/checkout', { promoCode: 'BIENVENUE10' });
   expect(res.status).toBe(200);
-  expect(res.data.total).toBe(45):
+  expect(res.data.total).toBe(45);
 });
 ```
 
@@ -466,15 +466,15 @@ app.get('/getUserOrders', async (req, res) => {
 
 - Listez tous les problèmes que vous trouvez. Pour chacun : le principe du cours concerné.
 
-    - Le nom de la route n'est pas bon, L'architecture REST, des noms pour les ressources, des verbes HTTP pour les actions.
+    - Le nom de la route n'est pas bon. L'architecture REST, des noms pour les ressources, des verbes HTTP pour les actions.
 
     - Il manque l'id dans la route pour récupérer un utilisateur
 
     - La route renvoie l'utilisateur et sa commande, alors que la route s'appelle "get user orders", 
-    L'exposition excessive de données, L'API renvoie des champs que le client n'a pas à voir.
+    L'exposition excessive de données, l'API renvoie des champs que le client n'a pas à voir.
 
-    -  La route renvoie 200, les différents cas d'erreurs ne sont pas testées
-    Les codes de statut HTTP, Un code à 3 chiffres. Le premier dit qui est responsable.
+    -  La route renvoie 200, les différents cas d'erreur ne sont pas testés
+    Les codes de statut HTTP, un code à 3 chiffres. Le premier dit qui est responsable.
 
 - Que se passe-t-il si l'identifiant demandé n'existe pas ? Suivez le code ligne par ligne.
 
@@ -485,7 +485,7 @@ La requête échoue, le code plante, erreur 500.
 Absence de gestion des erreurs HTTP :
 
 Ce route va résulter en des erreurs 5XX, il ne faut pas que l'appli renvoie des erreurs 5XX.
-Les erreurs doivent être gérer pour que ce soit des 4XX.
+Les erreurs doivent être gérées pour qu'il s'agisse d'erreurs 4XX.
 
 La réponse renvoie l'utilisateur et sa commande :
 
