@@ -6,7 +6,7 @@ info:
     Contrat API pour le sujet Miamzy (etape 0).
 
     Conventions:
-    - Prix: entier en centimes d'euro (amountCents), currency="EUR"
+    - Prix: tous les champs termines par Cents sont des entiers en centimes d'euro, currency="EUR"
     - Dates: format RFC 3339 (date-time), ex: 2026-11-20T14:30:00Z
 servers:
   - url: http://localhost:8000
@@ -45,8 +45,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -70,6 +70,8 @@ paths:
                 $ref: '#/components/schemas/Order'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -77,6 +79,7 @@ paths:
     post:
       tags: [Orders]
       summary: Creer une commande dans un restaurant
+      description: Les prix et le montant total sont calcules par le serveur a partir des articles en base.
       parameters:
         - in: path
           name: restaurantId
@@ -97,20 +100,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Order'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Restaurant ou utilisateur introuvable
+          description: Restaurant, utilisateur ou article introuvable
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
         '409':
-          description: Conflit metier (ex: restaurant ferme)
+          description: Restaurant ferme, article indisponible ou n'appartenant pas au restaurant
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -119,9 +122,11 @@ paths:
       tags: [Payments]
       summary: Payer une commande
       description: |
-        Tente de payer une commande en attente de paiement.
-        Recommande d'envoyer un header Idempotency-Key pour eviter un double paiement
-        en cas de retry reseau.
+        Enregistre un paiement pour une commande non annulee.
+        Le client fournit une cle d'idempotence unique pour chaque paiement.
+        Rejouer la meme requete avec la meme cle renvoie exactement la meme
+        reponse sans creer un second paiement. Une cle differente est traitee
+        comme un nouveau paiement.
       parameters:
         - in: path
           name: orderId
@@ -131,10 +136,11 @@ paths:
             format: uuid
         - in: header
           name: Idempotency-Key
-          required: false
-          description: Cle unique cote client pour dedupliquer les retries
+          required: true
+          description: Cle unique generee par le client pour ce paiement
           schema:
             type: string
+            minLength: 1
             maxLength: 128
       requestBody:
         required: true
@@ -144,27 +150,27 @@ paths:
               $ref: '#/components/schemas/CreatePaymentRequest'
       responses:
         '201':
-          description: Paiement enregistre, commande marquee comme payee
+          description: Paiement enregistre, ou meme reponse renvoyee si la cle a deja ete traitee
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          description: Commande deja payee ou etat incompatible
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '422':
+        '402':
           description: Paiement refuse (fonds insuffisants, carte invalide...)
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cle deja utilisee pour une autre requete ou commande annulee
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -189,13 +195,15 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
 components:
   responses:
-    BadRequest:
-      description: Requete invalide
+    ValidationError:
+      description: Parametres ou corps de requete invalides
       content:
         application/problem+json:
           schema:
@@ -222,16 +230,16 @@ components:
           type: string
           format: uri
           nullable: true
-          example: https://miamzy.dev/errors/order-already-paid
+          example: https://miamzy.dev/errors/order-cancelled
         title:
           type: string
-          example: Commande deja payee
+          example: Commande annulee
         status:
           type: integer
           example: 409
         detail:
           type: string
-          example: Cette commande est deja au statut paid.
+          example: Une commande annulee ne peut pas etre payee.
         instance:
           type: string
           nullable: true
@@ -257,7 +265,7 @@ components:
             status: pending_payment
             totalAmountCents: 2490
             currency: EUR
-            createdAt: 2026-11-20T14:30:00Z
+            createdAt: "2026-11-20T14:30:00Z"
         nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTExLTIwVDE0OjMwOjAwWiJ9
 
     OrderSummary:
@@ -342,14 +350,14 @@ components:
 
     CreatePaymentRequest:
       type: object
-      required: [method]
+      required: [method, cardToken]
       properties:
         method:
           type: string
           enum: [card]
         cardToken:
           type: string
-          nullable: true
+          minLength: 1
           description: Token de paiement (jamais de numero de carte brut)
 
     Payment:
@@ -380,7 +388,7 @@ components:
 
     UserProfile:
       type: object
-      required: [id, firstName, lastName, email, createdAt]
+      required: [id, firstName, lastName, createdAt]
       properties:
         id:
           type: string
@@ -391,14 +399,6 @@ components:
         lastName:
           type: string
           example: Martin
-        email:
-          type: string
-          format: email
-          example: lea.martin@example.com
-        phone:
-          type: string
-          nullable: true
-          example: +33610203040
         createdAt:
           type: string
           format: date-time

@@ -37,29 +37,36 @@ Routes retenues:
 
 Regle generale:
 - Succes: codes 2xx + JSON metier
-- Erreur: code HTTP adapte + corps application/problem+json
+- Erreur metier: code HTTP adapte + corps application/problem+json
+- Validation des entrees: 422 au meme format application/problem+json que les autres erreurs
 
 Par route:
 - GET /v1/orders
   - OK: 200 avec { data: [...], nextCursor }
-  - Erreurs: 400 (parametres invalides), 500 (erreur serveur)
+  - Erreurs: 422 (parametres invalides), 500 (erreur serveur)
 
 - GET /v1/orders/{orderId}
   - OK: 200 avec la commande complete
-  - Erreurs: 404 (commande introuvable), 500
+  - Erreurs: 404 (commande introuvable), 422 (identifiant invalide), 500
 
 - POST /v1/restaurants/{restaurantId}/orders
   - OK: 201 avec la commande creee
-  - Erreurs: 400 (payload invalide), 404 (restaurant/utilisateur introuvable), 409 (conflit metier), 500
+  - Erreurs: 404 (restaurant/utilisateur/article introuvable), 409 (restaurant ferme ou article indisponible), 422 (entree invalide), 500
+  - Les prix et le montant total sont calcules par le serveur a partir des articles en base.
 
 - POST /v1/orders/{orderId}/payments
   - OK: 201 avec le paiement cree
-  - Erreurs: 400 (payload invalide), 404 (commande introuvable), 409 (deja payee / etat incompatible), 422 (paiement refuse), 500
+  - Erreurs: 402 (paiement refuse), 404 (commande introuvable), 409 (cle reutilisee pour une autre requete ou commande annulee), 422 (entree invalide ou cle absente), 500
+  - Le client genere une cle d'idempotence et l'envoie dans le header Idempotency-Key.
+  - La cle est stockee avec le paiement en base et reste conservee pour toute la duree de l'exercice.
+  - La meme requete avec la meme cle renvoie exactement la meme reponse 201, sans creer un autre paiement.
+  - Une cle differente correspond a un nouveau paiement, meme si la commande a deja ete payee.
 
 - GET /v1/users/{userId}/profile
-  - OK: 200 avec le profil utilisateur non sensible
-  - Erreurs: 404 (utilisateur introuvable), 500
+  - OK: 200 avec uniquement id, firstName, lastName et createdAt
+  - Erreurs: 404 (utilisateur introuvable), 422 (identifiant invalide), 500
+  - L'email, le telephone et le mot de passe hache restent en base et ne sont jamais renvoyes.
 
 Convention de formats:
-- Prix: amountCents (entier), currency = EUR
+- Prix: tous les champs termines par Cents sont des entiers en centimes d'euro, currency = EUR
 - Dates: date-time RFC 3339 (ex: 2026-11-20T14:30:00Z)
