@@ -1,21 +1,23 @@
 # Études de cas — Groupe : Alexandre Noens
 
-## Cas 1
-Les routes de l'intranet
-★★★  ⏱ 12 min
-Une appli de gestion de notes pour une école
+## Cas 1 — Les routes de l'intranet
+
+**★★★ · 12 min**  
+*Une appli de gestion de notes pour une école*
 
 Un développeur junior a livré ces cinq routes. Elles fonctionnent toutes.
 
-```
-GET   /getStudents
-POST  /student/delete?id=4
-GET   /Notes_list
-POST  /updateNote
-GET   /getStudentNotes?student=4&delete=true
+```text
+GET     /getStudents
+POST    /student/delete?id=4
+GET     /Notes_list
+POST    /updateNote
+GET     /getStudentNotes?student=4&delete=true
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -44,24 +46,34 @@ DELETE   /students/4
 C'est un GET alors que c'est un DELETE
 
 
-## Cas 2
-La place F7
-★★★  ⏱ 12 min
-Une billetterie de cinéma
+## Cas 2 — La place F7
+
+**★★★ · 12 min**  
+*Une billetterie de cinéma*
 
 Deux personnes réservent la même place au même moment. Voici ce que reçoit la seconde. Son appli affiche « Réservation confirmée ».
 
-```
+```http
 POST /v1/bookings
-{ "movieId": 12, "seat": "F7" }
+Content-Type: application/json
+
+{
+  "movieId": 12,
+  "seat": "F7"
+}
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{ "ok": false, "error": "E42" }
+{
+  "ok": false,
+  "error": "E42"
+}
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -95,21 +107,23 @@ Content-Type: application/json
 
 Une erreur, le backend avec normalement un message d'erreur. Mais sans l'envoi de ce message dans le backend, impossible pour le front de deviner.
 
-## Cas 3
-La page d'accueil met 9 secondes
-★★★  ⏱ 12 min
-Une boutique en ligne
+## Cas 3 — La page d'accueil met 9 secondes
+
+**★★★ · 12 min**  
+*Une boutique en ligne*
 
 La boutique a démarré avec 40 produits. Elle en a 80 000 aujourd'hui. La page d'accueil affiche 12 produits. Le code n'a pas changé depuis le lancement.
 
-```
+```javascript
 app.get('/v1/products', async (req, res) => {
   const products = await db.query('SELECT * FROM products');
   res.json(products);
 });
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -141,14 +155,14 @@ app.get('/v1/products?limit=20', async (req, res) => {
 
 L'API ne renvoie que 20 produits, si l'utilisateur veut voir le reste, il doit cliquer sur la page 2.
 
-## Cas 4
-Trois dons de 20 €
-★★★  ⏱ 12 min
-Une cagnotte en ligne
+## Cas 4 — Trois dons de 20 €
+
+**★★★ · 12 min**  
+*Une cagnotte en ligne*
 
 Léa donne 20 € pour le pot de départ d'un collègue, depuis le train. Le réseau coupe au moment où elle valide. L'appli réessaie automatiquement. Son relevé affiche trois débits de 20 €.
 
-```
+```javascript
 app.post('/v1/donations', async (req, res) => {
   const don = await db.donations.insert({
     cagnotteId: req.body.cagnotteId,
@@ -159,7 +173,9 @@ app.post('/v1/donations', async (req, res) => {
 });
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -187,14 +203,14 @@ le client n'est pas débité à nouveau
 
 La donation est d'abord enregistrée avant le débit, il faut faire l'inverse.
 
-## Cas 5 
-La fiche du conducteur
-★★★  ⏱ 12 min
-Une appli de covoiturage
+## Cas 5 — La fiche du conducteur
+
+**★★★ · 12 min**  
+*Une appli de covoiturage*
 
 Avant un trajet, le passager voit la fiche du conducteur : son prénom et sa note. Voici ce que l'API renvoie pour afficher ces deux informations.
 
-```
+```http
 GET /v1/drivers/12
 
 HTTP/1.1 200 OK
@@ -211,7 +227,9 @@ HTTP/1.1 200 OK
 }
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -246,21 +264,23 @@ Ne sort jamais de l'API :
 
 Ce n'est pas parce que ce n'est pas visible dans le HTML que c'est invisible, F12, le body des requêtes, etc.
 
-## Cas 6
-La facture de mars
-★★★  ⏱ 15 min
-Une API météo gratuite
+## Cas 6 — La facture de mars
+
+**★★★ · 15 min**  
+*Une API météo gratuite*
 
 Cette API revend les prévisions d'un fournisseur qui facture chaque appel. Elle est ouverte à tous, sans inscription. En mars, un site partenaire met en ligne une page qui interroge l'API toutes les secondes pour chacun de ses visiteurs. La facture du fournisseur est multipliée par 40.
 
-```
+```javascript
 app.get('/v1/forecast', async (req, res) => {
-  const meteo = await fournisseur.previsions(req.query.ville);  // 0,002 € par appel
+  const meteo = await fournisseur.previsions(req.query.ville); // 0,002 € par appel
   res.json(meteo);
 });
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -288,15 +308,14 @@ Chaque étudiant a la même adresse IP, le site croit que c'est une seule person
 Pas besoin d'avoir la météo chaque seconde, une fois par heure suffit.
 
 
-## Cas 7
+## Cas 7 — La mise à jour du 3 mars
 
-La mise à jour du 3 mars
-★★★  ⏱ 15 min
-Une banque mobile
+**★★★ · 15 min**  
+*Une banque mobile*
 
 L'appli de la banque est installée sur 200 000 téléphones. Voici les notes de la mise à jour de l'API. Le lendemain, le support reçoit 4 000 appels.
 
-```
+```text
 ## Version 1 — mise à jour du 3 mars
 
 - Ajout du champ `currency` dans la réponse de GET /v1/accounts/{id}
@@ -306,7 +325,9 @@ L'appli de la banque est installée sur 200 000 téléphones. Voici les notes de
 - Ajout de la route GET /v1/accounts/{id}/cards
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Pour chacune des 5 lignes : cassante ou non cassante ? Justifiez en pensant à une appli installée il y a six mois.
 
@@ -354,14 +375,14 @@ La version 1 reste un backup pour les versions de l'app qui ne sont pas mises à
 
 Modifier le contrat API, laisser l'ancien nom et ajouter le nouveau sous v2
 
-## Cas 8 
-La conversation
-★★★  ⏱ 12 min
-Une startup, deux développeurs
+## Cas 8 — La conversation
+
+**★★★ · 12 min**  
+*Une startup, deux développeurs*
 
 Extrait de la messagerie interne de l'équipe.
 
-```
+```text
 Sarah (front)  10:02   Tu renvoies quoi pour une commande ? J'ai besoin du prix et de la date
 Tom (back)     10:15   {price, date} en gros
 Sarah (front)  10:16   ok je pars là-dessus
@@ -372,7 +393,9 @@ Sarah (front)  16:53   moi j'affiche "2490 €" et "Invalid Date" sur tous les �
 Tom (back)     17:05   ah. et le champ s'appelle amount_cents depuis lundi, j'avais prévenu Karim
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -401,14 +424,14 @@ Le format de la date n'a pas été défini
 Le nom du champ date a été renommé
 Sarah aurait dû demander un contrat API
 
-## Cas 9 
-Le test qui dit toujours oui
-★★★  ⏱ 12 min
-Un site de vente
+## Cas 9 — Le test qui dit toujours oui
+
+**★★★ · 12 min**  
+*Un site de vente*
 
 Ce test tourne à chaque mise en production. Il est vert.
 
-```
+```javascript
 test('le panier applique la remise de 10 %', async () => {
   const res = await api.post('/v1/carts/7/checkout', { promoCode: 'BIENVENUE10' });
   expect(res.status).toBe(200);
@@ -418,7 +441,9 @@ test('le panier applique la remise de 10 %', async () => {
 // La remise est appliquée deux fois. Le test est vert depuis deux mois.
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Où est le problème ? Décrivez-le en une phrase, comme à un collègue.
 
@@ -435,7 +460,7 @@ Les tests d'API, des programmes qui appellent l'API et vérifient la réponse to
 
 - Réécrivez ce test pour qu'il attrape le bug.
 
-```
+```javascript
 test('le panier applique la remise de 10 %', async () => {
   const res = await api.post('/v1/carts/7/checkout', { promoCode: 'BIENVENUE10' });
   expect(res.status).toBe(200);
@@ -447,14 +472,14 @@ test('le panier applique la remise de 10 %', async () => {
 
 Le total, si c'est le bon code promotion qui est appliquée et s'il est valide ?
 
-## Cas 10
-Sept lignes, combien de problèmes ?
-★★★  ⏱ 20 min
-Cas de synthèse
+## Cas 10 — Sept lignes, combien de problèmes ?
+
+**★★★ · 20 min**  
+*Cas de synthèse*
 
 Cette route renvoie un client et ses commandes. Elle est en production. Trouvez tout ce qui ne va pas : il y a au moins six problèmes, et ils ne viennent pas tous de la même règle.
 
-```
+```javascript
 app.get('/getUserOrders', async (req, res) => {
   const user = await db.users.findById(req.query.id);
   const orders = await db.orders.find({ userId: user.id });
@@ -462,7 +487,9 @@ app.get('/getUserOrders', async (req, res) => {
 });
 ```
 
-🤔 Votre analyse
+---
+
+🤔 **Votre analyse**
 
 - Listez tous les problèmes que vous trouvez. Pour chacun : le principe du cours concerné.
 
