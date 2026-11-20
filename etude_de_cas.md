@@ -32,10 +32,10 @@ L'architecture REST, des noms pour les ressources, des verbes HTTP pour les acti
 - Réécrivez les cinq routes proprement, avec leur méthode HTTP.
 
 ```
-GET   /students
-DELETE  /students/4
-GET   /notes
-POST  /notes
+GET      /students
+DELETE   /students/4
+GET      /notes
+POST     /notes
 DELETE   /students/4
 ```
 
