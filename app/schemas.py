@@ -9,7 +9,7 @@ class ApiModel(BaseModel):
 
 
 class Problem(ApiModel):
-    type: str | None = None
+    type: str = "about:blank"
     title: str
     status: int
     detail: str

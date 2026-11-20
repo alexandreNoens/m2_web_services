@@ -65,3 +65,27 @@
 - La premiere version du seed ajoutait tous les objets avant un seul commit. Comme certaines cles etrangeres etaient renseignees directement sans relation ORM, SQLAlchemy ne garantissait pas l'ordre d'insertion attendu.
 - Des `flush` explicites ont ete ajoutes apres les utilisateurs/restaurants puis apres les articles, afin que chaque parent existe avant l'insertion des commandes.
 - La verification a aussi confirme que le prix d'une commande devait venir de la base et non du corps JSON; le corps de creation ne contient donc jamais de prix fourni par le client.
+
+## Etape 2 - Uniformisation et preuves des erreurs
+
+**Ce qu'on a demande a l'IA :**
+> Verifier que l'implementation respecte les criteres de l'etape 2,
+> puis creer `preuves/etape_2` avec un `Makefile` et un `README.md` pour preparer
+> les trois captures demandees. Completer ensuite le README avec les reponses
+> curl et corriger le champ `type` lorsqu'il vaut `null`.
+
+**Ce qu'elle a bien fait :**
+
+- Elle a controle les trois cas imposes : commande inexistante en `404`, panier vide en `422` et JSON illisible en `422` plutot qu'en `500`.
+- Elle a verifie que les reponses utilisent toutes `application/problem+json` avec les champs `type`, `title`, `status`, `detail` et `instance`.
+- Elle a ajoute un gestionnaire global pour convertir aussi les erreurs HTTP de FastAPI et Starlette dans ce format unique.
+- Elle a cree un `Makefile` permettant d'afficher chaque erreur et une cible `make check` qui controle automatiquement les codes, le type de contenu et la forme du JSON.
+- Elle a prepare les trois emplacements de captures et documente dans le README les reponses HTTP completes obtenues avec curl.
+- Elle a ajoute les choix de l'etape 2 au journal de decisions et les commandes de verification au README principal.
+
+**Ce qu'on a du corriger, et pourquoi :**
+
+- La premiere version de `preuves/etape_2/README.md` indiquait seulement les commandes et les emplacements des captures. Les sorties HTTP et JSON ont ete ajoutees pour conserver le meme niveau de preuve que dans l'etape 1.
+- Les erreurs metier sans URI specifique renvoyaient `"type": null`. La valeur standard RFC `"about:blank"` est maintenant utilisee afin que le champ reste explicite et jamais nul.
+- Le controle automatique a ete renforce pour echouer si `type` vaut `null`.
+- Le serveur de demonstration avait ete lance sans l'option `--reload`; les dernieres corrections ont donc ete validees sur une nouvelle instance avant de demander un redemarrage pour les captures.

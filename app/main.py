@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import models, schemas
 from app.database import Base, engine, get_db
@@ -30,7 +31,7 @@ class ApiProblem(Exception):
 
 def problem_response(request: Request, status: int, title: str, detail: str, problem_type: str | None = None):
     body = schemas.Problem(
-        type=problem_type,
+        type=problem_type or "about:blank",
         title=title,
         status=status,
         detail=detail,
@@ -61,6 +62,11 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         "; ".join(errors),
         "https://miamzy.dev/errors/validation",
     )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error_handler(request: Request, exc: StarletteHTTPException):
+    return problem_response(request, exc.status_code, "Erreur HTTP", str(exc.detail))
 
 
 @app.exception_handler(Exception)
