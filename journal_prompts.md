@@ -111,3 +111,24 @@
 - Le modele possedait seulement un index sur `created_at`, alors que le tri utilise aussi `id`; PostgreSQL devait encore departager ou filtrer certaines lignes.
 - Les exemples de curseur documentes ne contenaient pas l'identifiant requis par l'implementation. Ils ont ete remplaces par un curseur complet.
 - `create_all` ne cree pas un nouvel index lorsque la table existe deja. La creation idempotente de l'index est donc aussi executee au demarrage et avant le seed.
+
+## Etape 4 - Idempotence et preuves des paiements
+
+**Ce qu'on a demande a l'IA :**
+> Implementer l'etape 4, verifier l'idempotence deja presente dans
+> la route de paiement et produire des preuves rejouables pour tous les resultats
+> attendus.
+
+**Ce qu'elle a bien fait :**
+
+- Elle a verifie que la cle obligatoire, sa contrainte d'unicite et l'empreinte de la requete couvrent les rejeux et les acces concurrents.
+- Elle a cree un controle qui envoie trois fois le meme paiement et compare strictement les trois corps de reponse.
+- Elle a interroge directement PostgreSQL pour prouver qu'une seule ligne correspond a la cle rejouee.
+- Elle a controle qu'une autre cle cree un autre paiement et qu'une requete sans cle est refusee en `422` avec le format d'erreur commun.
+- Elle a utilise des cles horodatees afin que les preuves restent rejouables sans supprimer les paiements precedents.
+
+**Ce qu'on a du corriger, et pourquoi :**
+
+- L'implementation metier existante couvrait deja les criteres de l'etape; il ne fallait pas la remplacer par une nouvelle abstraction inutile.
+- Une cle fixe aurait fait dependre les demonstrations suivantes de l'etat de la base. Les scripts generent donc une nouvelle paire de cles a chaque execution de `make`.
+- Comparer seulement les identifiants ne prouvait pas que les reponses etaient identiques. Le controle utilise aussi `cmp` sur les corps JSON complets.
