@@ -1,0 +1,404 @@
+openapi: 3.0.3
+info:
+  title: Miamzy API
+  version: 1.0.0
+  description: |
+    Contrat API pour le sujet Miamzy (etape 0).
+
+    Conventions:
+    - Prix: tous les champs termines par Cents sont des entiers en centimes d'euro, currency="EUR"
+    - Dates: format RFC 3339 (date-time), ex: 2026-11-20T14:30:00Z
+servers:
+  - url: http://localhost:8000
+    description: Dev local (FastAPI)
+tags:
+  - name: Orders
+  - name: Payments
+  - name: Users
+
+paths:
+  /v1/orders:
+    get:
+      tags: [Orders]
+      summary: Lister les commandes
+      description: Retourne les commandes les plus recentes, avec pagination simple.
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          description: Nombre max de resultats (1 a 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: cursor
+          required: false
+          description: Curseur opaque pour la page suivante
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste renvoyee avec succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Consulter une commande
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Commande trouvee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/restaurants/{restaurantId}/orders:
+    post:
+      tags: [Orders]
+      summary: Creer une commande dans un restaurant
+      description: Les prix et le montant total sont calcules par le serveur a partir des articles en base.
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Commande creee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Restaurant, utilisateur ou article introuvable
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Restaurant ferme, article indisponible ou n'appartenant pas au restaurant
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/orders/{orderId}/payments:
+    post:
+      tags: [Payments]
+      summary: Payer une commande
+      description: |
+        Enregistre un paiement pour une commande non annulee.
+        Le client fournit une cle d'idempotence unique pour chaque paiement.
+        Rejouer la meme requete avec la meme cle renvoie exactement la meme
+        reponse sans creer un second paiement. Une cle differente est traitee
+        comme un nouveau paiement.
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: Idempotency-Key
+          required: true
+          description: Cle unique generee par le client pour ce paiement
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: Paiement enregistre, ou meme reponse renvoyee si la cle a deja ete traitee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '402':
+          description: Paiement refuse (fonds insuffisants, carte invalide...)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cle deja utilisee pour une autre requete ou commande annulee
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/users/{userId}/profile:
+    get:
+      tags: [Users]
+      summary: Consulter le profil d'un utilisateur
+      description: Retourne seulement les champs utiles a l'application (pas de donnees sensibles).
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Profil trouve
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  responses:
+    ValidationError:
+      description: Parametres ou corps de requete invalides
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Erreur interne serveur
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Problem:
+      type: object
+      required: [title, status, detail]
+      properties:
+        type:
+          type: string
+          format: uri
+          nullable: true
+          example: https://miamzy.dev/errors/order-cancelled
+        title:
+          type: string
+          example: Commande annulee
+        status:
+          type: integer
+          example: 409
+        detail:
+          type: string
+          example: Une commande annulee ne peut pas etre payee.
+        instance:
+          type: string
+          nullable: true
+          example: /v1/orders/0b7ddfd3-f6ec-48e1-9648-0fa4ec6f5039/payments
+
+    OrderListResponse:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Null quand il n'y a plus de page suivante
+      example:
+        data:
+          - id: 5afdd890-c4c9-4517-9ea9-7ddf4db6e3fd
+            restaurantId: fcb86cb8-aed9-4c4f-8378-4b8f70c455f7
+            userId: b5d7a48e-33fb-43f2-b0cf-efcbf7ab6d16
+            status: pending_payment
+            totalAmountCents: 2490
+            currency: EUR
+            createdAt: "2026-11-20T14:30:00Z"
+        nextCursor: eyJjcmVhdGVkQXQiOiIyMDI2LTExLTIwVDE0OjMwOjAwWiJ9
+
+    OrderSummary:
+      type: object
+      required:
+        [id, restaurantId, userId, status, totalAmountCents, currency, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        restaurantId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending_payment, paid, cancelled]
+        totalAmountCents:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          enum: [EUR]
+        createdAt:
+          type: string
+          format: date-time
+
+    Order:
+      allOf:
+        - $ref: '#/components/schemas/OrderSummary'
+        - type: object
+          required: [items, updatedAt]
+          properties:
+            items:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/OrderItem'
+            updatedAt:
+              type: string
+              format: date-time
+
+    OrderItem:
+      type: object
+      required: [menuItemId, name, quantity, unitPriceCents]
+      properties:
+        menuItemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Burger classique
+        quantity:
+          type: integer
+          minimum: 1
+        unitPriceCents:
+          type: integer
+          minimum: 0
+
+    CreateOrderRequest:
+      type: object
+      required: [userId, items]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [menuItemId, quantity]
+            properties:
+              menuItemId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+
+    CreatePaymentRequest:
+      type: object
+      required: [method, cardToken]
+      properties:
+        method:
+          type: string
+          enum: [card]
+        cardToken:
+          type: string
+          minLength: 1
+          description: Token de paiement (jamais de numero de carte brut)
+
+    Payment:
+      type: object
+      required: [id, orderId, amountCents, currency, method, status, paidAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        amountCents:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          enum: [EUR]
+        method:
+          type: string
+          enum: [card]
+        status:
+          type: string
+          enum: [succeeded]
+        paidAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required: [id, firstName, lastName, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          example: Lea
+        lastName:
+          type: string
+          example: Martin
+        createdAt:
+          type: string
+          format: date-time
