@@ -70,3 +70,32 @@ Par route:
 Convention de formats:
 - Prix: tous les champs termines par Cents sont des entiers en centimes d'euro, currency = EUR
 - Dates: date-time RFC 3339 (ex: 2026-11-20T14:30:00Z)
+
+## Etape 1
+
+### 1. Organisation de l'API
+
+- Toutes les routes sont placees sous `/v1` pour rendre la version explicite.
+- Les URL decrivent des ressources avec des noms et aucun verbe; l'action est portee par la methode HTTP.
+- Le code est une seule application FastAPI, suffisante pour les cinq besoins sans ajouter de microservices.
+- SQLAlchemy gere le modele relationnel et PostgreSQL est lance dans Docker; FastAPI reste lance localement pour faciliter le developpement.
+
+### 2. Donnees de demonstration
+
+- Le script `python -m app.seed` genere 20 restaurants, 100 utilisateurs, 100 articles et 5 000 commandes.
+- Un generateur pseudo-aleatoire avec une graine fixe et des UUID v5 rend les identifiants reproductibles.
+- Le seed remet volontairement les tables a zero afin que chaque demonstration parte du meme etat.
+- Certains restaurants sont fermes, certains articles indisponibles et les commandes ont plusieurs statuts pour fournir des donnees realistes.
+
+Alternatives ecartees:
+- Faker: dependance inutile pour les quelques champs necessaires a cette etape.
+- UUID v4 pour le seed: les identifiants changeraient a chaque lancement et rendraient les commandes curl difficiles a reproduire.
+- Base en memoire: elle ne prouverait pas l'utilisation de PostgreSQL et perdrait toutes les donnees au redemarrage.
+
+### 3. Comportements retenus
+
+- La liste est triee de la plus recente a la plus ancienne et utilise un curseur Base64 opaque contenant la date et l'identifiant de la derniere commande.
+- Le serveur lit les prix des articles en base et calcule lui-meme le total lors de la creation.
+- Les paiements stockent la cle d'idempotence et une empreinte de la requete; meme cle et meme requete renvoient le meme paiement.
+- Toutes les erreurs exposees par l'API, y compris les erreurs de validation FastAPI, utilisent `application/problem+json`.
+- Les informations sensibles de l'utilisateur existent en base pour verifier qu'elles ne sont pas exposees par la route de profil.

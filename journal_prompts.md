@@ -42,3 +42,26 @@
 - Le contrat disait a la fois qu'une cle differente cree un nouveau paiement et qu'une commande deja payee est dans un etat incompatible. Ces deux regles se contredisaient.
 - La regle finale choisie pour suivre le TP est la suivante : meme cle et meme requete, meme reponse sans nouvel effet ; cle differente, nouveau paiement ; commande annulee, erreur `409`.
 - Les etapes futures ne sont pas encore ajoutees au contrat : le rate limiting et sa reponse `429` seront ajoutes a l'etape 6, puis le champ facultatif `promoCode` a l'etape 7.
+
+## Etape 1 - Implementation des cinq routes
+
+**Ce qu'on a demande a l'IA :**
+> Implementer l'etape 1 en utilisant le contrat `openapi.yml`,
+> completer les journaux de decisions et de prompts, et rendre les cinq routes
+> testables avec curl. FastAPI doit tourner localement et PostgreSQL dans Docker.
+
+**Ce qu'elle a bien fait :**
+
+- Elle a initialise une application FastAPI et un PostgreSQL Docker sans ajouter d'architecture inutile.
+- Elle a implemente les cinq routes sous `/v1` avec les champs et codes HTTP du contrat.
+- Elle a ajoute une pagination par curseur, le calcul serveur des prix et l'idempotence des paiements.
+- Elle a uniformise les erreurs au format `application/problem+json`, y compris les erreurs `422` generees par FastAPI.
+- Elle a cree un seed reproductible contenant 20 restaurants et 5 000 commandes.
+- Elle a fourni des UUID stables et les cinq commandes curl necessaires a la demonstration.
+- Elle a verifie les routes sur une vraie instance PostgreSQL et controle le nombre de donnees en base.
+
+**Ce qu'on a du corriger, et pourquoi :**
+
+- La premiere version du seed ajoutait tous les objets avant un seul commit. Comme certaines cles etrangeres etaient renseignees directement sans relation ORM, SQLAlchemy ne garantissait pas l'ordre d'insertion attendu.
+- Des `flush` explicites ont ete ajoutes apres les utilisateurs/restaurants puis apres les articles, afin que chaque parent existe avant l'insertion des commandes.
+- La verification a aussi confirme que le prix d'une commande devait venir de la base et non du corps JSON; le corps de creation ne contient donc jamais de prix fourni par le client.
