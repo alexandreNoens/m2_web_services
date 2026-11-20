@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import and_, or_, select
+from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,6 +19,8 @@ from app.database import Base, engine, get_db
 
 app = FastAPI(title="Miamzy API", version="1.0.0")
 logger = logging.getLogger(__name__)
+DEFAULT_ORDER_PAGE_SIZE = 20
+MAX_ORDER_PAGE_SIZE = 100
 
 
 class ApiProblem(Exception):
@@ -84,6 +86,7 @@ async def internal_error_handler(request: Request, exc: Exception):
 @app.on_event("startup")
 def create_tables():
     Base.metadata.create_all(engine)
+    models.order_pagination_index.create(engine, checkfirst=True)
 
 
 def encode_cursor(order: models.Order) -> str:
@@ -105,7 +108,7 @@ def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
 
 @app.get("/v1/orders", response_model=schemas.OrderListResponse, response_model_by_alias=True)
 def list_orders(
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=DEFAULT_ORDER_PAGE_SIZE, ge=1, le=MAX_ORDER_PAGE_SIZE),
     cursor: str | None = None,
     db: Session = Depends(get_db),
 ):
@@ -113,10 +116,7 @@ def list_orders(
     if cursor:
         created_at, order_id = decode_cursor(cursor)
         statement = statement.where(
-            or_(
-                models.Order.created_at < created_at,
-                and_(models.Order.created_at == created_at, models.Order.id < order_id),
-            )
+            tuple_(models.Order.created_at, models.Order.id) < tuple_(created_at, order_id)
         )
 
     orders = list(db.scalars(statement.limit(limit + 1)))

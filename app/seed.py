@@ -21,6 +21,7 @@ def stable_uuid(resource: str, number: int) -> uuid.UUID:
 
 def seed_database():
     Base.metadata.create_all(engine)
+    models.order_pagination_index.create(engine, checkfirst=True)
     rng = random.Random(42)
     now = datetime.now(timezone.utc).replace(microsecond=0)
 
